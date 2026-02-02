@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".mintlify/dist",
+  "framework": null
+}

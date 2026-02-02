@@ -1,0 +1,160 @@
+---
+title: Autenticación
+description: 'Cómo autenticar tus requests a la API de FichAI'
+---
+
+## API Keys
+
+La API de FichAI usa API keys para autenticar requests. Tu API key identifica tu aplicación y te permite acceder a los datos del MLS.
+
+### Formato de API Key
+
+Las API keys tienen el siguiente formato:
+
+```
+pk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+- `pk_` - Prefijo que indica que es una Public API key
+- `live_` - Indica que es una key de producción
+- `xxxx...` - Identificador único de 32 caracteres
+
+### Cómo enviar tu API Key
+
+Incluí tu API key en el header `Authorization` de cada request usando el esquema Bearer:
+
+```bash
+curl -X GET "https://app.fichai.com/api/public/desarrollos" \
+  -H "Authorization: Bearer pk_live_xxxxxxxxxxxx"
+```
+
+<Warning>
+  **Nunca expongas tu API key en código del lado del cliente** (JavaScript en el browser, apps móviles sin ofuscación, etc.).
+  Siempre hacé las requests desde tu servidor backend.
+</Warning>
+
+## Manejo de errores de autenticación
+
+### API Key faltante
+
+Si no enviás el header `Authorization`:
+
+```json
+{
+  "error": "API key is required",
+  "code": "MISSING_API_KEY"
+}
+```
+**Status code:** `401 Unauthorized`
+
+### API Key inválida
+
+Si la API key no existe o el formato es incorrecto:
+
+```json
+{
+  "error": "Invalid API key",
+  "code": "INVALID_API_KEY"
+}
+```
+**Status code:** `401 Unauthorized`
+
+### API Key expirada
+
+Si tu API key expiró:
+
+```json
+{
+  "error": "API key has expired",
+  "code": "API_KEY_EXPIRED"
+}
+```
+**Status code:** `403 Forbidden`
+
+### API Key desactivada
+
+Si tu API key fue desactivada:
+
+```json
+{
+  "error": "API key is inactive",
+  "code": "API_KEY_INACTIVE"
+}
+```
+**Status code:** `403 Forbidden`
+
+## Restricción por origen
+
+Tu API key puede estar configurada para aceptar requests solo desde ciertos dominios. Si hacés una request desde un origen no autorizado:
+
+```json
+{
+  "error": "Origin not allowed for this API key",
+  "code": "ORIGIN_NOT_ALLOWED"
+}
+```
+**Status code:** `403 Forbidden`
+
+<Note>
+  Si necesitás agregar dominios a tu lista de orígenes permitidos, contactá a soporte@fichai.com
+</Note>
+
+## Buenas prácticas
+
+<AccordionGroup>
+  <Accordion title="Guardá tu API key de forma segura">
+    - Usá variables de entorno para almacenar tu API key
+    - Nunca commitees tu API key en repositorios de código
+    - Usá servicios de secrets management en producción
+  </Accordion>
+
+  <Accordion title="Rotá tus API keys periódicamente">
+    Si sospechás que tu API key fue comprometida, contactanos inmediatamente para desactivarla y generar una nueva.
+  </Accordion>
+
+  <Accordion title="Usá HTTPS siempre">
+    Todas las requests a la API deben hacerse via HTTPS. Las requests HTTP serán rechazadas.
+  </Accordion>
+
+  <Accordion title="Implementá retry con backoff">
+    Si recibís errores de rate limiting (429), esperá antes de reintentar usando exponential backoff.
+  </Accordion>
+</AccordionGroup>
+
+## Ejemplo completo
+
+```javascript
+// config.js
+const API_KEY = process.env.FICHAI_API_KEY;
+const API_BASE_URL = 'https://app.fichai.com/api/public';
+
+// api.js
+async function fetchDesarrollos(options = {}) {
+  const { country, limit = 50, offset = 0 } = options;
+
+  const params = new URLSearchParams({ limit, offset });
+  if (country) params.append('country', country);
+
+  const response = await fetch(`${API_BASE_URL}/desarrollos?${params}`, {
+    headers: {
+      'Authorization': `Bearer ${API_KEY}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`API Error: ${error.error} (${error.code})`);
+  }
+
+  return response.json();
+}
+
+// usage
+try {
+  const data = await fetchDesarrollos({ country: 'AR', limit: 10 });
+  console.log(`Found ${data.meta.total} desarrollos`);
+} catch (error) {
+  console.error('Failed to fetch:', error.message);
+}
+```

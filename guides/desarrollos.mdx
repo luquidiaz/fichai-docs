@@ -1,0 +1,152 @@
+---
+title: Trabajando con Desarrollos
+description: 'Guía completa para consultar desarrollos inmobiliarios'
+---
+
+## ¿Qué es un Desarrollo?
+
+En FichAI, un **desarrollo inmobiliario** representa un proyecto de construcción que contiene múltiples unidades (departamentos, casas, locales, etc.). Los desarrollos pueden estar en diferentes etapas: pozo, en construcción, o terminados.
+
+## Estructura de un Desarrollo
+
+```json
+{
+  "id": "uuid",
+  "titulo": "Nombre del desarrollo",
+  "slug": "nombre-del-desarrollo",
+  "descripcion": "Descripción detallada...",
+  "estado": "disponible",
+  "etapa_desarrollo": "en_construccion",
+  "fecha_entrega": "2025-12-01",
+  "country_code": "AR",
+  "localizacion": {
+    "direccion": "Dirección completa",
+    "ciudad": "Ciudad",
+    "provincia": "Provincia",
+    "pais": "País",
+    "lat": -34.5678,
+    "lng": -58.4321
+  },
+  "multimedia": {
+    "imagenes": ["url1", "url2"],
+    "video_url": "https://youtube.com/...",
+    "tour_360_url": "https://..."
+  },
+  "precios": {
+    "desde": 100000,
+    "hasta": 500000,
+    "moneda": "USD"
+  },
+  "organizations": {
+    "id": "uuid",
+    "name": "Nombre de la inmobiliaria",
+    "slug": "slug-inmobiliaria",
+    "logo_url": "https://..."
+  }
+}
+```
+
+## Estados de un Desarrollo
+
+| Estado | Descripción |
+|--------|-------------|
+| `disponible` | Desarrollo activo con unidades disponibles |
+| `en_construccion` | En proceso de construcción |
+| `vendido` | Todas las unidades vendidas |
+| `pausado` | Temporalmente no disponible |
+
+Por defecto, la API retorna desarrollos con estado `disponible` o `en_construccion`.
+
+## Etapas de Desarrollo
+
+| Etapa | Descripción |
+|-------|-------------|
+| `pozo` | Preventa, aún no comenzó la construcción |
+| `en_construccion` | Construcción en curso |
+| `terminado` | Edificio terminado, listo para entrega |
+
+## Filtros disponibles
+
+### Por país
+
+Filtrá desarrollos por código de país ISO:
+
+```bash
+GET /desarrollos?country=AR   # Argentina
+GET /desarrollos?country=UY   # Uruguay
+GET /desarrollos?country=MX   # México
+```
+
+### Por organización
+
+Filtrá por el slug de la inmobiliaria:
+
+```bash
+GET /desarrollos?org=inmobiliaria-premium
+```
+
+### Por estado
+
+Especificá los estados a incluir (separados por coma):
+
+```bash
+GET /desarrollos?status=disponible
+GET /desarrollos?status=disponible,en_construccion,vendido
+```
+
+## Obtener detalle de un desarrollo
+
+Para obtener información completa de un desarrollo específico, incluyendo sus unidades disponibles:
+
+```bash
+GET /desarrollos/torre-del-parque
+```
+
+La respuesta incluye:
+- Todos los campos del desarrollo
+- Array de `unidades` disponibles/reservadas
+- `unidades_stats` con estadísticas (total, disponibles, reservadas, vendidas)
+
+## Ejemplo: Listar desarrollos de Argentina
+
+```javascript
+const response = await fetch(
+  'https://app.fichai.com/api/public/desarrollos?country=AR&limit=20',
+  {
+    headers: {
+      'Authorization': 'Bearer pk_live_xxxxxxxxxxxx'
+    }
+  }
+);
+
+const { desarrollos, meta } = await response.json();
+
+console.log(`Mostrando ${desarrollos.length} de ${meta.total} desarrollos`);
+
+desarrollos.forEach(d => {
+  console.log(`${d.titulo} - ${d.localizacion.ciudad}`);
+  console.log(`  Precio: ${d.precios.moneda} ${d.precios.desde.toLocaleString()}`);
+});
+```
+
+## Ejemplo: Obtener unidades de un desarrollo
+
+```javascript
+const response = await fetch(
+  'https://app.fichai.com/api/public/desarrollos/torre-del-parque',
+  {
+    headers: {
+      'Authorization': 'Bearer pk_live_xxxxxxxxxxxx'
+    }
+  }
+);
+
+const { desarrollo } = await response.json();
+
+console.log(`${desarrollo.titulo}`);
+console.log(`Stats: ${desarrollo.unidades_stats.disponibles} disponibles de ${desarrollo.unidades_stats.total_unidades}`);
+
+desarrollo.unidades.forEach(u => {
+  console.log(`  - ${u.titulo} (Piso ${u.piso}) - ${u.estado}`);
+});
+```

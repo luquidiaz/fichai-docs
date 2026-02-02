@@ -1,0 +1,601 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "FichAI Public API",
+    "version": "1.0.0",
+    "description": "API pública de FichAI para acceder a desarrollos inmobiliarios listados en el MLS de FichAI.\n\n## Autenticación\n\nTodos los endpoints requieren una API key. Incluye tu key en el header `Authorization`:\n\n```\nAuthorization: Bearer pk_live_xxxxxxxxxxxx\n```\n\nPara obtener una API key, contacta a soporte@fichai.com o solicítala desde el panel de administración.\n\n## Rate Limiting\n\n- 100 requests por minuto por API key\n- Respuestas incluyen headers `X-RateLimit-*`\n\n## Caché\n\nLas respuestas tienen caché de 60 segundos. El header `Cache-Control` indica la política de caché.",
+    "contact": {
+      "name": "FichAI Support",
+      "email": "soporte@fichai.com",
+      "url": "https://fichai.com"
+    },
+    "license": {
+      "name": "Proprietary"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://app.fichai.com/api/public",
+      "description": "Production"
+    },
+    {
+      "url": "http://localhost:3000/api/public",
+      "description": "Local development"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "API Key",
+        "description": "API key obtenida desde el panel de FichAI. Formato: `pk_live_xxxx` o `pk_test_xxxx`"
+      }
+    },
+    "schemas": {
+      "Organization": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID único de la organización"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre de la organización"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Slug URL-friendly de la organización"
+          },
+          "logo_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "URL del logo"
+          },
+          "website": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "Sitio web de la organización"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Descripción de la organización"
+          }
+        }
+      },
+      "Localizacion": {
+        "type": "object",
+        "properties": {
+          "direccion": {
+            "type": "string",
+            "description": "Dirección completa"
+          },
+          "ciudad": {
+            "type": "string",
+            "description": "Ciudad"
+          },
+          "provincia": {
+            "type": "string",
+            "description": "Provincia/Estado"
+          },
+          "pais": {
+            "type": "string",
+            "description": "País"
+          },
+          "lat": {
+            "type": "number",
+            "format": "double",
+            "description": "Latitud"
+          },
+          "lng": {
+            "type": "number",
+            "format": "double",
+            "description": "Longitud"
+          }
+        }
+      },
+      "Multimedia": {
+        "type": "object",
+        "properties": {
+          "imagenes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "URLs de imágenes del desarrollo"
+          },
+          "video_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "URL de video del desarrollo"
+          },
+          "tour_360_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "URL de tour 360"
+          }
+        }
+      },
+      "Precios": {
+        "type": "object",
+        "properties": {
+          "desde": {
+            "type": "number",
+            "description": "Precio mínimo"
+          },
+          "hasta": {
+            "type": "number",
+            "description": "Precio máximo"
+          },
+          "moneda": {
+            "type": "string",
+            "enum": ["USD", "ARS", "UYU", "MXN"],
+            "description": "Moneda de los precios"
+          }
+        }
+      },
+      "DesarrolloSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID único del desarrollo"
+          },
+          "titulo": {
+            "type": "string",
+            "description": "Título del desarrollo"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Slug URL-friendly"
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true,
+            "description": "Descripción breve"
+          },
+          "estado": {
+            "type": "string",
+            "enum": ["disponible", "en_construccion", "vendido", "pausado"],
+            "description": "Estado del desarrollo"
+          },
+          "etapa_desarrollo": {
+            "type": "string",
+            "nullable": true,
+            "description": "Etapa de construcción (pozo, en_construccion, terminado)"
+          },
+          "fecha_entrega": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "Fecha estimada de entrega"
+          },
+          "country_code": {
+            "type": "string",
+            "description": "Código de país ISO (AR, UY, MX, etc.)"
+          },
+          "localizacion": {
+            "$ref": "#/components/schemas/Localizacion"
+          },
+          "multimedia": {
+            "$ref": "#/components/schemas/Multimedia"
+          },
+          "precios": {
+            "$ref": "#/components/schemas/Precios"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha de creación"
+          },
+          "organizations": {
+            "$ref": "#/components/schemas/Organization"
+          }
+        }
+      },
+      "DesarrolloDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/DesarrolloSummary"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "unidades": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Unidad"
+                },
+                "description": "Unidades disponibles"
+              },
+              "unidades_stats": {
+                "$ref": "#/components/schemas/UnidadesStats"
+              }
+            }
+          }
+        ]
+      },
+      "Unidad": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string",
+            "enum": ["disponible", "reservada", "vendida"]
+          },
+          "precios": {
+            "$ref": "#/components/schemas/Precios"
+          },
+          "multimedia": {
+            "$ref": "#/components/schemas/Multimedia"
+          },
+          "piso": {
+            "type": "integer",
+            "nullable": true
+          },
+          "numero": {
+            "type": "string",
+            "nullable": true
+          },
+          "orientacion": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "UnidadesStats": {
+        "type": "object",
+        "properties": {
+          "total_unidades": {
+            "type": "integer"
+          },
+          "disponibles": {
+            "type": "integer"
+          },
+          "reservadas": {
+            "type": "integer"
+          },
+          "vendidas": {
+            "type": "integer"
+          }
+        }
+      },
+      "PaginationMeta": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "Total de resultados"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Límite por página"
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Offset actual"
+          },
+          "has_more": {
+            "type": "boolean",
+            "description": "Indica si hay más resultados"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Mensaje de error"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/desarrollos": {
+      "get": {
+        "summary": "Listar desarrollos",
+        "description": "Obtiene una lista paginada de desarrollos inmobiliarios públicos listados en el MLS de FichAI.",
+        "operationId": "listDesarrollos",
+        "tags": ["Desarrollos"],
+        "parameters": [
+          {
+            "name": "country",
+            "in": "query",
+            "description": "Código de país ISO para filtrar (AR, UY, MX, etc.)",
+            "schema": {
+              "type": "string",
+              "example": "AR"
+            }
+          },
+          {
+            "name": "org",
+            "in": "query",
+            "description": "Slug de la organización para filtrar",
+            "schema": {
+              "type": "string",
+              "example": "inmobiliaria-ejemplo"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Estados a incluir (separados por coma). Default: disponible,en_construccion",
+            "schema": {
+              "type": "string",
+              "default": "disponible,en_construccion",
+              "example": "disponible,en_construccion"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Máximo de resultados por página (1-100)",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Offset para paginación",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de desarrollos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "desarrollos": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DesarrolloSummary"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginationMeta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "API key inválida o faltante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/desarrollos/{slug}": {
+      "get": {
+        "summary": "Obtener desarrollo por slug",
+        "description": "Obtiene los detalles completos de un desarrollo, incluyendo sus unidades disponibles y estadísticas.",
+        "operationId": "getDesarrolloBySlug",
+        "tags": ["Desarrollos"],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "Slug único del desarrollo",
+            "schema": {
+              "type": "string",
+              "example": "torre-del-parque"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle del desarrollo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "desarrollo": {
+                      "$ref": "#/components/schemas/DesarrolloDetail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "API key inválida o faltante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Desarrollo no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Desarrollo no encontrado"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{slug}/desarrollos": {
+      "get": {
+        "summary": "Desarrollos de una organización",
+        "description": "Obtiene todos los desarrollos públicos de una organización específica.",
+        "operationId": "getOrganizationDesarrollos",
+        "tags": ["Organizations"],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "Slug de la organización",
+            "schema": {
+              "type": "string",
+              "example": "inmobiliaria-ejemplo"
+            }
+          },
+          {
+            "name": "country",
+            "in": "query",
+            "description": "Código de país ISO para filtrar",
+            "schema": {
+              "type": "string",
+              "example": "AR"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Estados a incluir (separados por coma)",
+            "schema": {
+              "type": "string",
+              "default": "disponible,en_construccion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organización con sus desarrollos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "organization": {
+                      "$ref": "#/components/schemas/Organization"
+                    },
+                    "desarrollos": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DesarrolloSummary"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "API key inválida o faltante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Organización no encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Organización no encontrada"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Desarrollos",
+      "description": "Endpoints para acceder a desarrollos inmobiliarios"
+    },
+    {
+      "name": "Organizations",
+      "description": "Endpoints para acceder a organizaciones y sus desarrollos"
+    }
+  ]
+}

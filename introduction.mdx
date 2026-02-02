@@ -1,0 +1,106 @@
+---
+title: Introducción
+description: 'Bienvenido a la API pública de FichAI'
+---
+
+<img
+  className="block dark:hidden"
+  src="/images/hero-light.svg"
+  alt="FichAI API"
+/>
+<img
+  className="hidden dark:block"
+  src="/images/hero-dark.svg"
+  alt="FichAI API"
+/>
+
+## Bienvenido a FichAI API
+
+La API de FichAI te permite acceder a información de desarrollos inmobiliarios listados en nuestro MLS (Multiple Listing Service). Podés consultar desarrollos, sus unidades disponibles, precios y más.
+
+### Qué podés hacer con la API
+
+<CardGroup cols={2}>
+  <Card
+    title="Listar Desarrollos"
+    icon="building"
+    href="/api-reference/desarrollos/list"
+  >
+    Obtené una lista de todos los desarrollos disponibles con filtros por país, organización y estado.
+  </Card>
+  <Card
+    title="Detalle de Desarrollo"
+    icon="house"
+    href="/api-reference/desarrollos/get"
+  >
+    Accedé a información detallada de un desarrollo, incluyendo unidades y estadísticas.
+  </Card>
+  <Card
+    title="Por Organización"
+    icon="buildings"
+    href="/api-reference/organizations/desarrollos"
+  >
+    Consultá todos los desarrollos de una organización específica.
+  </Card>
+  <Card
+    title="Autenticación"
+    icon="key"
+    href="/authentication"
+  >
+    Aprendé cómo autenticarte usando tu API key.
+  </Card>
+</CardGroup>
+
+## Base URL
+
+Todas las requests a la API deben hacerse a:
+
+```
+https://app.fichai.com/api/public
+```
+
+## Formato de respuestas
+
+La API devuelve respuestas en formato JSON. Todas las respuestas exitosas tienen código `200 OK`.
+
+```json
+{
+  "desarrollos": [...],
+  "meta": {
+    "total": 100,
+    "limit": 50,
+    "offset": 0,
+    "has_more": true
+  }
+}
+```
+
+## Rate Limiting
+
+La API tiene límites de requests para garantizar un servicio estable:
+
+- **100 requests por minuto** por API key (por defecto)
+- Los headers `X-RateLimit-*` indican tu uso actual
+
+<Note>
+  Si necesitás un rate limit mayor, contactanos a soporte@fichai.com
+</Note>
+
+## Próximos pasos
+
+<CardGroup cols={2}>
+  <Card
+    title="Quickstart"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Empezá a usar la API en 5 minutos
+  </Card>
+  <Card
+    title="Autenticación"
+    icon="lock"
+    href="/authentication"
+  >
+    Configurá tu API key
+  </Card>
+</CardGroup>

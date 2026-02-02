@@ -1,0 +1,232 @@
+---
+title: 'Obtener Desarrollo'
+api: 'GET /desarrollos/{slug}'
+description: 'Obtiene el detalle completo de un desarrollo con sus unidades'
+---
+
+## Descripción
+
+Retorna información detallada de un desarrollo específico, incluyendo sus unidades disponibles y estadísticas de venta. Solo funciona para desarrollos con `mls_fichai = true`.
+
+## Parámetros
+
+<ParamField path="slug" type="string" required>
+  Slug único del desarrollo. Es el identificador URL-friendly.
+
+  Ejemplo: `torre-del-parque`
+</ParamField>
+
+## Respuesta
+
+<ResponseField name="desarrollo" type="object">
+  Objeto con toda la información del desarrollo.
+
+  <Expandable title="Propiedades">
+    <ResponseField name="id" type="string">
+      UUID único del desarrollo
+    </ResponseField>
+    <ResponseField name="titulo" type="string">
+      Nombre del desarrollo
+    </ResponseField>
+    <ResponseField name="slug" type="string">
+      Identificador URL-friendly
+    </ResponseField>
+    <ResponseField name="descripcion" type="string">
+      Descripción completa del desarrollo
+    </ResponseField>
+    <ResponseField name="estado" type="string">
+      Estado actual
+    </ResponseField>
+    <ResponseField name="etapa_desarrollo" type="string">
+      Etapa de construcción
+    </ResponseField>
+    <ResponseField name="fecha_entrega" type="string">
+      Fecha estimada de entrega
+    </ResponseField>
+    <ResponseField name="country_code" type="string">
+      Código de país
+    </ResponseField>
+    <ResponseField name="localizacion" type="object">
+      Ubicación completa
+    </ResponseField>
+    <ResponseField name="multimedia" type="object">
+      Imágenes, videos y tours
+    </ResponseField>
+    <ResponseField name="precios" type="object">
+      Rango de precios
+    </ResponseField>
+    <ResponseField name="organizations" type="object">
+      Información de la inmobiliaria
+    </ResponseField>
+    <ResponseField name="unidades" type="array">
+      Array de unidades disponibles/reservadas
+
+      <Expandable title="Propiedades de cada unidad">
+        <ResponseField name="id" type="string">
+          UUID de la unidad
+        </ResponseField>
+        <ResponseField name="titulo" type="string">
+          Nombre/identificador de la unidad
+        </ResponseField>
+        <ResponseField name="estado" type="string">
+          `disponible`, `reservada`, o `vendida`
+        </ResponseField>
+        <ResponseField name="precios" type="object">
+          Precio de la unidad
+        </ResponseField>
+        <ResponseField name="multimedia" type="object">
+          Imágenes de la unidad
+        </ResponseField>
+        <ResponseField name="piso" type="integer">
+          Número de piso
+        </ResponseField>
+        <ResponseField name="numero" type="string">
+          Número/letra de unidad
+        </ResponseField>
+        <ResponseField name="orientacion" type="string">
+          Orientación (Norte, Sur, etc.)
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="unidades_stats" type="object">
+      Estadísticas de unidades
+
+      <Expandable title="Propiedades">
+        <ResponseField name="total_unidades" type="integer">
+          Total de unidades en el desarrollo
+        </ResponseField>
+        <ResponseField name="disponibles" type="integer">
+          Unidades disponibles
+        </ResponseField>
+        <ResponseField name="reservadas" type="integer">
+          Unidades reservadas
+        </ResponseField>
+        <ResponseField name="vendidas" type="integer">
+          Unidades vendidas
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://app.fichai.com/api/public/desarrollos/torre-del-parque" \
+  -H "Authorization: Bearer pk_live_xxxxxxxxxxxx"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://app.fichai.com/api/public/desarrollos/torre-del-parque',
+  {
+    headers: {
+      'Authorization': 'Bearer pk_live_xxxxxxxxxxxx'
+    }
+  }
+);
+
+const { desarrollo } = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    'https://app.fichai.com/api/public/desarrollos/torre-del-parque',
+    headers={'Authorization': 'Bearer pk_live_xxxxxxxxxxxx'}
+)
+
+desarrollo = response.json()['desarrollo']
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "desarrollo": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "titulo": "Torre del Parque",
+    "slug": "torre-del-parque",
+    "descripcion": "Desarrollo premium en zona norte con amenities de primer nivel. Pileta, gym, SUM, parrillas, y seguridad 24hs.",
+    "estado": "disponible",
+    "etapa_desarrollo": "en_construccion",
+    "fecha_entrega": "2025-12-01",
+    "country_code": "AR",
+    "localizacion": {
+      "direccion": "Av. del Libertador 1234",
+      "ciudad": "Buenos Aires",
+      "provincia": "CABA",
+      "pais": "Argentina",
+      "lat": -34.5678,
+      "lng": -58.4321
+    },
+    "multimedia": {
+      "imagenes": [
+        "https://storage.fichai.com/desarrollos/torre-1.jpg",
+        "https://storage.fichai.com/desarrollos/torre-2.jpg"
+      ],
+      "video_url": "https://youtube.com/watch?v=xxxxx",
+      "tour_360_url": "https://tour360.fichai.com/torre"
+    },
+    "precios": {
+      "desde": 150000,
+      "hasta": 450000,
+      "moneda": "USD"
+    },
+    "organizations": {
+      "id": "org-550e8400-xxxx",
+      "name": "Inmobiliaria Premium",
+      "slug": "inmobiliaria-premium",
+      "logo_url": "https://storage.fichai.com/logos/premium.png",
+      "website": "https://inmobiliariapremium.com"
+    },
+    "unidades": [
+      {
+        "id": "unit-001",
+        "titulo": "2 amb con balcón",
+        "estado": "disponible",
+        "precios": {
+          "desde": 180000,
+          "hasta": 180000,
+          "moneda": "USD"
+        },
+        "multimedia": {
+          "imagenes": ["https://storage.fichai.com/unidades/u1.jpg"]
+        },
+        "piso": 5,
+        "numero": "A",
+        "orientacion": "Norte"
+      },
+      {
+        "id": "unit-002",
+        "titulo": "3 amb con vista al parque",
+        "estado": "reservada",
+        "precios": {
+          "desde": 280000,
+          "hasta": 280000,
+          "moneda": "USD"
+        },
+        "multimedia": {
+          "imagenes": ["https://storage.fichai.com/unidades/u2.jpg"]
+        },
+        "piso": 8,
+        "numero": "B",
+        "orientacion": "Este"
+      }
+    ],
+    "unidades_stats": {
+      "total_unidades": 48,
+      "disponibles": 12,
+      "reservadas": 8,
+      "vendidas": 28
+    }
+  }
+}
+```
+
+```json 404 Not Found
+{
+  "error": "Desarrollo no encontrado"
+}
+```
+</ResponseExample>

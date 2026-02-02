@@ -1,0 +1,55 @@
+---
+title: 'API Reference'
+description: 'Referencia completa de la API pública de FichAI'
+---
+
+## Base URL
+
+```
+https://app.fichai.com/api/public
+```
+
+## Autenticación
+
+Todas las requests requieren una API key en el header `Authorization`:
+
+```bash
+Authorization: Bearer pk_live_xxxxxxxxxxxx
+```
+
+## Formato de respuestas
+
+Todas las respuestas son JSON. Las respuestas exitosas tienen código `200 OK`.
+
+## Endpoints disponibles
+
+<CardGroup cols={2}>
+  <Card
+    title="GET /desarrollos"
+    icon="list"
+    href="/api-reference/desarrollos/list"
+  >
+    Listar desarrollos con filtros
+  </Card>
+  <Card
+    title="GET /desarrollos/{slug}"
+    icon="building"
+    href="/api-reference/desarrollos/get"
+  >
+    Obtener detalle de un desarrollo
+  </Card>
+  <Card
+    title="GET /organizations/{slug}/desarrollos"
+    icon="buildings"
+    href="/api-reference/organizations/desarrollos"
+  >
+    Desarrollos de una organización
+  </Card>
+</CardGroup>
+
+## Convenciones
+
+- **IDs**: UUIDs v4
+- **Fechas**: ISO 8601 (`2025-12-01T00:00:00Z`)
+- **Monedas**: Códigos ISO 4217 (`USD`, `ARS`, `UYU`)
+- **Países**: Códigos ISO 3166-1 alpha-2 (`AR`, `UY`, `MX`)

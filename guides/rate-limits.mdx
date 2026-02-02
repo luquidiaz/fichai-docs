@@ -1,0 +1,199 @@
+---
+title: Rate Limits
+description: 'Límites de requests y cómo manejarlos'
+---
+
+## Límites por defecto
+
+Cada API key tiene límites de requests para garantizar un servicio estable para todos los usuarios:
+
+| Límite | Valor por defecto |
+|--------|------------------|
+| Requests por minuto | 100 |
+| Requests por día | Sin límite* |
+
+<Note>
+  *El límite diario puede configurarse por API key según el plan contratado.
+</Note>
+
+## Headers de Rate Limit
+
+Cada respuesta de la API incluye headers que indican tu uso actual:
+
+```
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1706745600000
+```
+
+| Header | Descripción |
+|--------|-------------|
+| `X-RateLimit-Limit` | Máximo de requests permitidas en la ventana |
+| `X-RateLimit-Remaining` | Requests restantes en la ventana actual |
+| `X-RateLimit-Reset` | Timestamp (ms) cuando se resetea el contador |
+
+## Respuesta cuando se excede el límite
+
+Cuando excedés el rate limit, recibís un error `429 Too Many Requests`:
+
+```json
+{
+  "error": "Rate limit exceeded. Try again later.",
+  "code": "RATE_LIMITED"
+}
+```
+
+## Cómo evitar el rate limit
+
+<AccordionGroup>
+  <Accordion title="Implementá caching">
+    Cacheá las respuestas de la API en tu servidor. Los datos de desarrollos no cambian frecuentemente, un TTL de 5-15 minutos es razonable.
+
+    ```javascript
+    const cache = new Map();
+    const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
+    async function getDesarrollos() {
+      const cached = cache.get('desarrollos');
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return cached.data;
+      }
+
+      const data = await fetchFromAPI();
+      cache.set('desarrollos', { data, timestamp: Date.now() });
+      return data;
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Usá paginación eficiente">
+    Usá el máximo `limit` permitido (100) para reducir la cantidad de requests necesarias.
+
+    ```bash
+    # Malo: 10 requests para 100 items
+    GET /desarrollos?limit=10
+
+    # Bueno: 1 request para 100 items
+    GET /desarrollos?limit=100
+    ```
+  </Accordion>
+
+  <Accordion title="Evitá requests redundantes">
+    No hagas la misma request múltiples veces. Guardá los datos en memoria o base de datos local.
+  </Accordion>
+
+  <Accordion title="Procesá en batch durante horas de bajo tráfico">
+    Si necesitás sincronizar grandes volúmenes de datos, hacelo durante la noche o fines de semana.
+  </Accordion>
+</AccordionGroup>
+
+## Manejo de rate limit en código
+
+### JavaScript con retry automático
+
+```javascript
+class FichAIClient {
+  constructor(apiKey) {
+    this.apiKey = apiKey;
+    this.baseUrl = 'https://app.fichai.com/api/public';
+  }
+
+  async request(endpoint, options = {}) {
+    const url = `${this.baseUrl}${endpoint}`;
+
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+        ...options.headers
+      }
+    });
+
+    // Guardar info de rate limit
+    this.rateLimit = {
+      limit: parseInt(response.headers.get('X-RateLimit-Limit')),
+      remaining: parseInt(response.headers.get('X-RateLimit-Remaining')),
+      reset: parseInt(response.headers.get('X-RateLimit-Reset'))
+    };
+
+    // Manejar rate limit
+    if (response.status === 429) {
+      const waitTime = this.rateLimit.reset - Date.now();
+      console.log(`Rate limited. Waiting ${waitTime}ms...`);
+
+      await new Promise(r => setTimeout(r, Math.max(waitTime, 1000)));
+      return this.request(endpoint, options); // Retry
+    }
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error);
+    }
+
+    return response.json();
+  }
+
+  // Método helper para verificar si podemos hacer más requests
+  canMakeRequest() {
+    return !this.rateLimit || this.rateLimit.remaining > 0;
+  }
+
+  // Tiempo hasta que se resetee el rate limit
+  timeUntilReset() {
+    if (!this.rateLimit) return 0;
+    return Math.max(0, this.rateLimit.reset - Date.now());
+  }
+}
+
+// Uso
+const client = new FichAIClient('pk_live_xxxx');
+
+const data = await client.request('/desarrollos?limit=100');
+console.log(`Requests restantes: ${client.rateLimit.remaining}`);
+```
+
+### Python con rate limit tracking
+
+```python
+import requests
+import time
+
+class FichAIClient:
+    def __init__(self, api_key):
+        self.api_key = api_key
+        self.base_url = 'https://app.fichai.com/api/public'
+        self.rate_limit = None
+
+    def request(self, endpoint):
+        url = f'{self.base_url}{endpoint}'
+        headers = {'Authorization': f'Bearer {self.api_key}'}
+
+        response = requests.get(url, headers=headers)
+
+        # Track rate limit
+        self.rate_limit = {
+            'limit': int(response.headers.get('X-RateLimit-Limit', 100)),
+            'remaining': int(response.headers.get('X-RateLimit-Remaining', 100)),
+            'reset': int(response.headers.get('X-RateLimit-Reset', 0))
+        }
+
+        if response.status_code == 429:
+            wait_time = (self.rate_limit['reset'] - time.time() * 1000) / 1000
+            print(f'Rate limited. Waiting {wait_time:.1f}s...')
+            time.sleep(max(wait_time, 1))
+            return self.request(endpoint)
+
+        response.raise_for_status()
+        return response.json()
+```
+
+## Solicitar aumento de límites
+
+Si tu aplicación necesita más requests, contactanos a **soporte@fichai.com** con:
+
+- Nombre de tu empresa/proyecto
+- Uso actual y proyectado
+- Justificación del aumento
+
+Evaluaremos tu caso y te ofreceremos un plan adecuado.

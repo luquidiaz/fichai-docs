@@ -1,0 +1,12 @@
+{
+  "name": "fichai-docs",
+  "version": "1.0.0",
+  "description": "FichAI API Documentation",
+  "scripts": {
+    "dev": "mintlify dev",
+    "build": "mintlify build"
+  },
+  "devDependencies": {
+    "mintlify": "^4.0.0"
+  }
+}

@@ -1,0 +1,164 @@
+---
+title: Paginación
+description: 'Cómo paginar resultados en la API de FichAI'
+---
+
+## Parámetros de paginación
+
+La API usa paginación basada en offset para listar recursos. Todos los endpoints que retornan listas soportan estos parámetros:
+
+| Parámetro | Tipo | Default | Descripción |
+|-----------|------|---------|-------------|
+| `limit` | integer | 50 | Cantidad de resultados por página (1-100) |
+| `offset` | integer | 0 | Número de resultados a saltar |
+
+## Metadata de paginación
+
+Todas las respuestas paginadas incluyen un objeto `meta`:
+
+```json
+{
+  "desarrollos": [...],
+  "meta": {
+    "total": 156,
+    "limit": 50,
+    "offset": 0,
+    "has_more": true
+  }
+}
+```
+
+| Campo | Descripción |
+|-------|-------------|
+| `total` | Cantidad total de resultados disponibles |
+| `limit` | Límite usado en esta request |
+| `offset` | Offset usado en esta request |
+| `has_more` | `true` si hay más resultados después de esta página |
+
+## Ejemplo de paginación
+
+### Primera página
+
+```bash
+GET /desarrollos?limit=20&offset=0
+```
+
+```json
+{
+  "desarrollos": [/* 20 items */],
+  "meta": {
+    "total": 156,
+    "limit": 20,
+    "offset": 0,
+    "has_more": true
+  }
+}
+```
+
+### Segunda página
+
+```bash
+GET /desarrollos?limit=20&offset=20
+```
+
+```json
+{
+  "desarrollos": [/* 20 items */],
+  "meta": {
+    "total": 156,
+    "limit": 20,
+    "offset": 20,
+    "has_more": true
+  }
+}
+```
+
+### Última página
+
+```bash
+GET /desarrollos?limit=20&offset=140
+```
+
+```json
+{
+  "desarrollos": [/* 16 items */],
+  "meta": {
+    "total": 156,
+    "limit": 20,
+    "offset": 140,
+    "has_more": false
+  }
+}
+```
+
+## Implementación en código
+
+### JavaScript - Obtener todos los resultados
+
+```javascript
+async function fetchAllDesarrollos(apiKey) {
+  const allDesarrollos = [];
+  let offset = 0;
+  const limit = 100; // máximo permitido
+
+  while (true) {
+    const response = await fetch(
+      `https://app.fichai.com/api/public/desarrollos?limit=${limit}&offset=${offset}`,
+      {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      }
+    );
+
+    const { desarrollos, meta } = await response.json();
+    allDesarrollos.push(...desarrollos);
+
+    if (!meta.has_more) break;
+    offset += limit;
+  }
+
+  return allDesarrollos;
+}
+```
+
+### JavaScript - Paginación con iterador
+
+```javascript
+async function* paginateDesarrollos(apiKey, pageSize = 50) {
+  let offset = 0;
+
+  while (true) {
+    const response = await fetch(
+      `https://app.fichai.com/api/public/desarrollos?limit=${pageSize}&offset=${offset}`,
+      {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      }
+    );
+
+    const data = await response.json();
+    yield data;
+
+    if (!data.meta.has_more) break;
+    offset += pageSize;
+  }
+}
+
+// Uso
+for await (const page of paginateDesarrollos(API_KEY, 20)) {
+  console.log(`Procesando ${page.desarrollos.length} desarrollos...`);
+  // Procesar página
+}
+```
+
+## Buenas prácticas
+
+<Tip>
+  Usá el valor máximo de `limit` (100) para minimizar la cantidad de requests cuando necesites obtener todos los resultados.
+</Tip>
+
+<Warning>
+  No hagas requests en paralelo para diferentes páginas. Esto puede causar que excedas el rate limit. Procesá las páginas secuencialmente.
+</Warning>
+
+<Note>
+  Los resultados están ordenados por fecha de creación (más recientes primero). Este orden es consistente entre requests.
+</Note>
