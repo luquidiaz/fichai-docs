@@ -1,6 +1,38 @@
 <svg width="800" height="200" viewBox="0 0 800 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="800" height="200" rx="12" fill="#EFF6FF"/>
-  <rect x="40" y="40" width="120" height="120" rx="12" fill="#2563EB"/>
-  <text x="180" y="90" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="700" fill="#1F2937">FichAI API</text>
-  <text x="180" y="130" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#6B7280">Accede a desarrollos inmobiliarios del MLS</text>
+  <!-- Background with gradient -->
+  <defs>
+    <linearGradient id="bgGradientLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F9FAFB;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F3F4F6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="200" rx="16" fill="url(#bgGradientLight)"/>
+
+  <!-- Decorative grid pattern -->
+  <pattern id="gridLight" width="40" height="40" patternUnits="userSpaceOnUse">
+    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#E5E7EB" stroke-width="1"/>
+  </pattern>
+  <rect width="800" height="200" fill="url(#gridLight)" opacity="0.5"/>
+
+  <!-- Paper airplane icon large -->
+  <g transform="translate(50, 50)">
+    <path d="M20 50 L80 20 L65 50 L80 80 L20 50" fill="#1F2937"/>
+    <line x1="15" y1="60" x2="5" y2="70" stroke="#1F2937" stroke-width="4" stroke-linecap="round"/>
+    <line x1="22" y1="67" x2="12" y2="77" stroke="#1F2937" stroke-width="4" stroke-linecap="round"/>
+    <line x1="29" y1="74" x2="19" y2="84" stroke="#1F2937" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- Text content -->
+  <text x="180" y="85" font-family="system-ui, -apple-system, sans-serif" font-size="40" font-weight="800" fill="#1F2937">FichAI API</text>
+  <text x="180" y="125" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#6B7280">API pública para desarrollos inmobiliarios del MLS de Argentina</text>
+
+  <!-- Pill badges -->
+  <rect x="180" y="145" width="80" height="28" rx="14" fill="#ECFDF5"/>
+  <text x="195" y="164" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#059669">REST API</text>
+
+  <rect x="270" y="145" width="60" height="28" rx="14" fill="#EFF6FF"/>
+  <text x="283" y="164" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#2563EB">JSON</text>
+
+  <rect x="340" y="145" width="100" height="28" rx="14" fill="#FEF3C7"/>
+  <text x="355" y="164" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#D97706">Paginación</text>
 </svg>

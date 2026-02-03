@@ -1,4 +1,8 @@
 <svg width="120" height="32" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="4" width="24" height="24" rx="4" fill="#3B82F6"/>
-  <text x="32" y="23" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="700" fill="#F9FAFB">FichAI</text>
+  <!-- Paper airplane -->
+  <path d="M8 16 L20 8 L17 16 L20 24 L8 16" fill="#F9FAFB"/>
+  <line x1="6" y1="20" x2="2" y2="24" stroke="#F9FAFB" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="8" y1="22" x2="4" y2="26" stroke="#F9FAFB" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="10" y1="24" x2="6" y2="28" stroke="#F9FAFB" stroke-width="1.5" stroke-linecap="round"/>
+  <text x="34" y="22" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#F9FAFB">FichAI</text>
 </svg>

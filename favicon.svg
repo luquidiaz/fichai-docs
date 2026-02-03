@@ -1,4 +1,8 @@
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="32" height="32" rx="6" fill="#2563EB"/>
-  <text x="8" y="23" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="white">F</text>
+  <!-- Paper airplane favicon -->
+  <rect width="32" height="32" rx="6" fill="#1F2937"/>
+  <path d="M8 16 L22 7 L18 16 L22 25 L8 16" fill="#FFFFFF"/>
+  <line x1="7" y1="20" x2="4" y2="23" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="9" y1="22" x2="6" y2="25" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="11" y1="24" x2="8" y2="27" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
 </svg>
