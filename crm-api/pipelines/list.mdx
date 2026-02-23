@@ -1,0 +1,119 @@
+---
+title: 'Listar Pipelines'
+description: 'Obtiene los pipelines disponibles con sus stages'
+---
+
+## GET /api/v1/pipelines
+
+Endpoint de descubrimiento que retorna los pipelines activos de tu organizacion con sus stages ordenados por posicion. Usa este endpoint para obtener los valores de `pipeline_id` o `pipeline` (nombre) necesarios para crear leads.
+
+## Autenticacion
+
+```bash
+Authorization: Bearer sk_live_YOUR_API_KEY
+```
+
+**Scope requerido:** `contacts:read`
+
+## Respuesta
+
+<ResponseField name="data" type="array">
+  Array de pipelines con sus stages.
+
+  <Expandable title="Propiedades de cada pipeline">
+    <ResponseField name="id" type="string">UUID del pipeline</ResponseField>
+    <ResponseField name="name" type="string">Nombre del pipeline (ej: "Ventas")</ResponseField>
+    <ResponseField name="type" type="string">Tipo de pipeline (ej: "sales", "rentals")</ResponseField>
+    <ResponseField name="is_default" type="boolean">`true` si es el pipeline por defecto</ResponseField>
+    <ResponseField name="stages" type="array">
+      Stages del pipeline, ordenados por posicion.
+
+      <Expandable title="Propiedades de cada stage">
+        <ResponseField name="id" type="string">UUID del stage</ResponseField>
+        <ResponseField name="name" type="string">Nombre del stage (ej: "Nuevo", "Contactado")</ResponseField>
+        <ResponseField name="position" type="integer">Posicion en el pipeline (0 = primer stage)</ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Tip>
+  Cuando creas un lead con `POST /api/v1/leads`, la oportunidad se crea automaticamente en el **primer stage** (position 0) del pipeline seleccionado.
+</Tip>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://app.fichai.com/api/v1/pipelines" \
+  -H "Authorization: Bearer sk_live_YOUR_API_KEY"
+```
+
+```javascript JavaScript
+const response = await fetch('https://app.fichai.com/api/v1/pipelines', {
+  headers: {
+    'Authorization': 'Bearer sk_live_YOUR_API_KEY'
+  }
+});
+
+const { data: pipelines } = await response.json();
+
+// Encontrar el pipeline "Ventas"
+const ventas = pipelines.find(p => p.name === 'Ventas');
+console.log('Pipeline ID:', ventas.id);
+console.log('Stages:', ventas.stages.map(s => s.name));
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    'https://app.fichai.com/api/v1/pipelines',
+    headers={'Authorization': 'Bearer sk_live_YOUR_API_KEY'}
+)
+
+pipelines = response.json()['data']
+for pipeline in pipelines:
+    print(f"{pipeline['name']} ({len(pipeline['stages'])} stages)")
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "data": [
+    {
+      "id": "770e8400-e29b-41d4-a716-446655440000",
+      "name": "Ventas",
+      "type": "sales",
+      "is_default": true,
+      "stages": [
+        { "id": "880e8400-0001-0000-0000-000000000000", "name": "Nuevo", "position": 0 },
+        { "id": "880e8400-0002-0000-0000-000000000000", "name": "Contactado", "position": 1 },
+        { "id": "880e8400-0003-0000-0000-000000000000", "name": "Visita", "position": 2 },
+        { "id": "880e8400-0004-0000-0000-000000000000", "name": "Oferta", "position": 3 },
+        { "id": "880e8400-0005-0000-0000-000000000000", "name": "Cerrado", "position": 4 }
+      ]
+    },
+    {
+      "id": "770e8400-e29b-41d4-a716-446655440001",
+      "name": "Alquileres",
+      "type": "rentals",
+      "is_default": false,
+      "stages": [
+        { "id": "880e8400-0006-0000-0000-000000000000", "name": "Consulta", "position": 0 },
+        { "id": "880e8400-0007-0000-0000-000000000000", "name": "Visita", "position": 1 },
+        { "id": "880e8400-0008-0000-0000-000000000000", "name": "Cerrado", "position": 2 }
+      ]
+    }
+  ]
+}
+```
+
+```json 401 Unauthorized
+{
+  "error": {
+    "code": "INVALID_KEY",
+    "message": "Invalid or missing API key"
+  }
+}
+```
+</ResponseExample>

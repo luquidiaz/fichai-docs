@@ -1,0 +1,284 @@
+---
+title: 'Crear Lead'
+description: 'Crea un contacto y oportunidad en una sola llamada'
+---
+
+## POST /api/v1/leads
+
+Crea un **contacto** y su **oportunidad** asociada en una sola llamada. Diseñado para recibir leads desde Meta Ads via Zapier, n8n o Make.
+
+<Note>
+  Cada llamada crea un contacto nuevo + una oportunidad nueva. No se hace deduplicacion — si un lead se envia 4 veces, se crean 4 contactos con 4 oportunidades.
+</Note>
+
+## Autenticacion
+
+```bash
+Authorization: Bearer sk_live_YOUR_API_KEY
+```
+
+**Scope requerido:** `contacts:write`
+
+## Request Body
+
+<ParamField body="first_name" type="string">
+  Nombre del lead. **Requerido** si no se envia `name`.
+
+  Ideal para integraciones con Meta Ads donde los campos vienen separados.
+</ParamField>
+
+<ParamField body="last_name" type="string">
+  Apellido del lead. Opcional.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Nombre completo. **Requerido** si no se envia `first_name`.
+
+  Si se envian `first_name` + `last_name`, se ignora `name` y se concatenan automaticamente.
+</ParamField>
+
+<ParamField body="email" type="string">
+  Email del lead.
+</ParamField>
+
+<ParamField body="phone" type="string">
+  Telefono del lead. Se normaliza automaticamente (se remueven caracteres no numericos).
+</ParamField>
+
+<ParamField body="pipeline" type="string" required>
+  Nombre del pipeline donde crear la oportunidad. Busqueda case-insensitive.
+
+  **Requerido** si no se envia `pipeline_id`. Recomendado para configuraciones simples.
+
+  <Tip>
+    Usa `GET /api/v1/pipelines` para ver los nombres disponibles.
+  </Tip>
+</ParamField>
+
+<ParamField body="pipeline_id" type="string">
+  UUID del pipeline. Alternativa a `pipeline` (nombre).
+
+  Recomendado si el nombre del pipeline puede cambiar.
+</ParamField>
+
+<ParamField body="assigned_to_email" type="string">
+  Email del miembro del equipo al que asignar el lead.
+
+  <Warning>
+    Solo funciona con keys de **owner/admin**. Keys de member auto-asignan al creador.
+  </Warning>
+</ParamField>
+
+<ParamField body="assigned_to" type="string">
+  UUID del miembro del equipo. Alternativa a `assigned_to_email`.
+</ParamField>
+
+<ParamField body="title" type="string">
+  Titulo de la oportunidad. Default: `"Lead - {nombre}"`.
+</ParamField>
+
+<ParamField body="estimated_value" type="number">
+  Valor estimado de la oportunidad (debe ser positivo).
+</ParamField>
+
+<ParamField body="source" type="string" default="campaign">
+  Origen del lead. Valores: `manual`, `api`, `website`, `portal`, `referral`, `social`, `campaign`, `whatsapp`.
+</ParamField>
+
+<ParamField body="campaign_data" type="object">
+  Datos de la campana de origen. Se guardan en los `custom_fields` de la oportunidad.
+
+  ```json
+  {
+    "campaign_id": "120210123456",
+    "campaign_name": "Meta Leads Q1",
+    "ad_set": "Audiencia Palermo",
+    "form_id": "987654321"
+  }
+  ```
+</ParamField>
+
+<ParamField body="publication_id" type="string">
+  UUID de la publicacion asociada. Se guarda como metadata para futuro routing automatico.
+</ParamField>
+
+<ParamField body="tags" type="string[]" default="[]">
+  Tags para el contacto.
+</ParamField>
+
+<ParamField body="custom_fields" type="object" default="{}">
+  Campos custom del contacto (formato libre).
+</ParamField>
+
+<ParamField body="notes" type="string">
+  Notas para el contacto y la oportunidad.
+</ParamField>
+
+## Respuesta
+
+<ResponseField name="data.contact" type="object">
+  El contacto creado.
+
+  <Expandable title="Propiedades">
+    <ResponseField name="id" type="string">UUID del contacto</ResponseField>
+    <ResponseField name="name" type="string">Nombre completo</ResponseField>
+    <ResponseField name="first_name" type="string">Nombre</ResponseField>
+    <ResponseField name="last_name" type="string">Apellido</ResponseField>
+    <ResponseField name="email" type="string">Email</ResponseField>
+    <ResponseField name="phone" type="string">Telefono</ResponseField>
+    <ResponseField name="source" type="string">Origen</ResponseField>
+    <ResponseField name="created_at" type="string">Fecha de creacion (ISO 8601)</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.opportunity" type="object">
+  La oportunidad creada.
+
+  <Expandable title="Propiedades">
+    <ResponseField name="id" type="string">UUID de la oportunidad</ResponseField>
+    <ResponseField name="pipeline_id" type="string">UUID del pipeline</ResponseField>
+    <ResponseField name="stage_id" type="string">UUID del primer stage del pipeline</ResponseField>
+    <ResponseField name="assigned_to" type="string">UUID del miembro asignado</ResponseField>
+    <ResponseField name="status" type="string">Estado (`open`)</ResponseField>
+    <ResponseField name="title" type="string">Titulo</ResponseField>
+    <ResponseField name="origin" type="string">`api_lead`</ResponseField>
+    <ResponseField name="created_at" type="string">Fecha de creacion (ISO 8601)</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Errores especificos
+
+| Code | Status | Descripcion |
+|------|--------|-------------|
+| `VALIDATION_ERROR` | 400 | Campos requeridos faltantes o invalidos |
+| `PIPELINE_NOT_FOUND` | 400 | Pipeline no existe o no pertenece a la organizacion |
+| `PIPELINE_NO_STAGES` | 400 | Pipeline no tiene stages activos |
+| `MEMBER_NOT_FOUND` | 400 | `assigned_to` o `assigned_to_email` no es miembro de la organizacion |
+| `DATABASE_ERROR` | 500 | Error interno al crear contacto u oportunidad |
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://app.fichai.com/api/v1/leads" \
+  -H "Authorization: Bearer sk_live_YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "first_name": "Maria",
+    "last_name": "Garcia",
+    "email": "maria@gmail.com",
+    "phone": "+5491166667777",
+    "pipeline": "Ventas",
+    "source": "campaign",
+    "campaign_data": {
+      "campaign_name": "Meta Leads Q1",
+      "form_id": "987654321"
+    }
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://app.fichai.com/api/v1/leads', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer sk_live_YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    first_name: 'Maria',
+    last_name: 'Garcia',
+    email: 'maria@gmail.com',
+    phone: '+5491166667777',
+    pipeline: 'Ventas',
+    source: 'campaign',
+    campaign_data: {
+      campaign_name: 'Meta Leads Q1',
+      form_id: '987654321'
+    }
+  })
+});
+
+const { data } = await response.json();
+console.log('Contact:', data.contact.id);
+console.log('Opportunity:', data.opportunity.id);
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://app.fichai.com/api/v1/leads',
+    headers={
+        'Authorization': 'Bearer sk_live_YOUR_API_KEY',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'first_name': 'Maria',
+        'last_name': 'Garcia',
+        'email': 'maria@gmail.com',
+        'phone': '+5491166667777',
+        'pipeline': 'Ventas',
+        'source': 'campaign',
+        'campaign_data': {
+            'campaign_name': 'Meta Leads Q1',
+            'form_id': '987654321'
+        }
+    }
+)
+
+data = response.json()['data']
+print(f"Contact: {data['contact']['id']}")
+print(f"Opportunity: {data['opportunity']['id']}")
+```
+</RequestExample>
+
+<ResponseExample>
+```json 201 Created
+{
+  "data": {
+    "contact": {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "Maria Garcia",
+      "first_name": "Maria",
+      "last_name": "Garcia",
+      "email": "maria@gmail.com",
+      "phone": "+5491166667777",
+      "source": "campaign",
+      "created_at": "2026-02-23T10:00:00Z"
+    },
+    "opportunity": {
+      "id": "660e8400-e29b-41d4-a716-446655440000",
+      "pipeline_id": "770e8400-e29b-41d4-a716-446655440000",
+      "stage_id": "880e8400-e29b-41d4-a716-446655440000",
+      "assigned_to": "990e8400-e29b-41d4-a716-446655440000",
+      "status": "open",
+      "title": "Lead - Maria Garcia",
+      "origin": "api_lead",
+      "created_at": "2026-02-23T10:00:00Z"
+    }
+  }
+}
+```
+
+```json 400 Pipeline not found
+{
+  "error": {
+    "code": "PIPELINE_NOT_FOUND",
+    "message": "Pipeline \"Ventass\" not found in this organization"
+  }
+}
+```
+
+```json 400 Validation error
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request body",
+    "details": {
+      "formErrors": [],
+      "fieldErrors": {
+        "name": ["Either \"name\" or \"first_name\" is required"]
+      }
+    }
+  }
+}
+```
+</ResponseExample>

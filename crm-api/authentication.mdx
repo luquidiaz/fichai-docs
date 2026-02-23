@@ -1,0 +1,110 @@
+---
+title: Autenticacion CRM
+description: 'Como autenticar requests a la CRM API de FichAI'
+---
+
+## API Keys CRM
+
+La CRM API usa API keys con prefijo `sk_live_` (Secret Key). A diferencia de las Public API keys (`pk_live_`), estas keys tienen acceso a datos del CRM y deben mantenerse en secreto.
+
+### Formato
+
+```
+sk_live_YOUR_API_KEY_HERE
+```
+
+- `sk_` - Prefijo que indica Secret Key (acceso CRM)
+- `live_` - Indica produccion
+- `xxxx...` - Identificador unico
+
+### Como enviar tu API Key
+
+Inclui tu API key en el header `Authorization` con el esquema Bearer:
+
+```bash
+curl -X POST "https://app.fichai.com/api/v1/leads" \
+  -H "Authorization: Bearer sk_live_YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"first_name": "Juan", "pipeline": "Ventas"}'
+```
+
+<Warning>
+  **Nunca expongas tu API key `sk_live_` en codigo del lado del cliente.**
+  Estas keys tienen acceso de escritura a tu CRM. Siempre usarlas desde el backend o desde Zapier/n8n/Make.
+</Warning>
+
+## Obtener tu API Key
+
+### Owner / Admin
+
+1. Ir a **Dashboard > Settings > API Keys**
+2. Click **"Crear nueva API Key"**
+3. Seleccionar scopes: `contacts:read`, `contacts:write`
+4. Guardar la key (solo se muestra una vez)
+
+### Member (agente individual)
+
+Los miembros pueden crear sus propias API keys con scopes restringidos al CRM:
+
+1. Ir a **Dashboard > Settings > API Keys**
+2. Click **"Crear nueva API Key"**
+3. Scopes disponibles: `contacts:read`, `contacts:write`, `opportunities:read`, `opportunities:write`
+4. Los leads creados con esta key se asignan automaticamente al miembro
+
+<Note>
+  Las keys de **member** solo permiten crear leads auto-asignados. Para asignar leads a otros miembros del equipo, se necesita una key de **owner** o **admin**.
+</Note>
+
+## Scopes disponibles
+
+| Scope | Descripcion |
+|-------|-------------|
+| `contacts:read` | Leer contactos, pipelines, equipo |
+| `contacts:write` | Crear leads y contactos |
+| `opportunities:read` | Leer oportunidades |
+| `opportunities:write` | Crear/actualizar oportunidades |
+
+## Modelo de permisos
+
+El comportamiento de la API varia segun el **rol del creador de la key**:
+
+| Accion | Owner/Admin Key | Member Key |
+|--------|----------------|------------|
+| Crear leads | Puede asignar a cualquier miembro | Auto-asigna al creador |
+| Ver equipo (`GET /team`) | Ve todos los miembros | Ve solo a si mismo |
+| Ver pipelines (`GET /pipelines`) | Ve todos los pipelines | Ve todos los pipelines |
+
+## Manejo de errores
+
+### API Key faltante (401)
+
+```json
+{
+  "error": {
+    "code": "INVALID_KEY",
+    "message": "Invalid or missing API key"
+  }
+}
+```
+
+### Scope insuficiente (403)
+
+```json
+{
+  "error": {
+    "code": "INSUFFICIENT_SCOPE",
+    "message": "Missing required scope: contacts:write"
+  }
+}
+```
+
+### Rate limit excedido (429)
+
+```json
+{
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Rate limit exceeded"
+  }
+}
+```

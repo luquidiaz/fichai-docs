@@ -1,0 +1,99 @@
+---
+title: 'CRM API'
+description: 'API para integraciones CRM: leads, contactos, pipelines y equipo'
+---
+
+## CRM API v1
+
+La CRM API de FichAI permite integrar tu CRM con herramientas externas como Zapier, n8n, Make, y cualquier plataforma que soporte webhooks HTTP.
+
+### Caso de uso principal
+
+Captura leads desde campanas de Meta Ads (Facebook/Instagram) y crealos automaticamente en tu CRM de FichAI con contacto + oportunidad en una sola llamada.
+
+### Base URL
+
+```
+https://app.fichai.com/api/v1
+```
+
+### Endpoints disponibles
+
+<CardGroup cols={2}>
+  <Card
+    title="POST /leads"
+    icon="bolt"
+    href="/crm-api/leads/create"
+  >
+    Crear lead (contacto + oportunidad) en una llamada
+  </Card>
+  <Card
+    title="GET /pipelines"
+    icon="diagram-project"
+    href="/crm-api/pipelines/list"
+  >
+    Listar pipelines y stages disponibles
+  </Card>
+  <Card
+    title="GET /team"
+    icon="users"
+    href="/crm-api/team/list"
+  >
+    Listar miembros del equipo
+  </Card>
+  <Card
+    title="Guia Zapier + Meta Ads"
+    icon="plug"
+    href="/crm-api/guides/zapier-meta-ads"
+  >
+    Paso a paso para integrar Meta Ads
+  </Card>
+</CardGroup>
+
+## Diferencia con la Public API
+
+| | Public API | CRM API |
+|---|---|---|
+| **Prefijo** | `/api/public` | `/api/v1` |
+| **API Key** | `pk_live_xxx` | `sk_live_...` |
+| **Proposito** | Consultar MLS de desarrollos | Gestionar CRM (leads, contactos) |
+| **Quien la usa** | Portales inmobiliarios, widgets | Zapier, n8n, Make, integraciones |
+
+## Rate Limiting
+
+- **Default:** 100 requests/minuto por API key
+- Headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+
+## Formato de respuestas
+
+### Success
+
+```json
+{
+  "data": { ... }
+}
+```
+
+### Error
+
+```json
+{
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Descripcion del error"
+  }
+}
+```
+
+### Codigos de error
+
+| Code | Status | Descripcion |
+|------|--------|-------------|
+| `INVALID_KEY` | 401 | API key invalida o faltante |
+| `KEY_EXPIRED` | 401 | API key expirada |
+| `KEY_INACTIVE` | 401 | API key desactivada |
+| `INSUFFICIENT_SCOPE` | 403 | Falta scope requerido |
+| `RATE_LIMITED` | 429 | Rate limit excedido |
+| `VALIDATION_ERROR` | 400 | Parametros invalidos |
+| `NOT_FOUND` | 404 | Recurso no encontrado |
+| `DATABASE_ERROR` | 500 | Error interno |

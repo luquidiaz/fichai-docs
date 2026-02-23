@@ -1,0 +1,217 @@
+---
+title: 'Zapier + Meta Ads'
+description: 'Guia paso a paso para integrar campanas de Meta Ads con FichAI via Zapier, n8n o Make'
+---
+
+## Integracion Meta Ads con FichAI
+
+Esta guia te muestra como configurar una integracion para que cada lead que llega desde una campana de Meta Ads (Facebook / Instagram) se cree automaticamente como contacto + oportunidad en tu CRM de FichAI.
+
+<Steps>
+  <Step title="Crear tu API Key">
+    1. Ir a **Dashboard > Settings > API Keys** en [app.fichai.com](https://app.fichai.com/dashboard/settings/api-keys)
+    2. Click **"Crear nueva API Key"**
+    3. Seleccionar scopes: `contacts:read` y `contacts:write`
+    4. **Guardar la key** — solo se muestra una vez
+
+    ```
+    sk_live_YOUR_API_KEY_HERE
+    ```
+
+    <Warning>
+      Guarda la key en un lugar seguro. No la vas a poder ver de nuevo.
+    </Warning>
+  </Step>
+
+  <Step title="Obtener el nombre de tu pipeline">
+    Necesitas saber el nombre exacto del pipeline donde queres que caigan los leads.
+
+    ```bash
+    curl -X GET "https://app.fichai.com/api/v1/pipelines" \
+      -H "Authorization: Bearer sk_live_YOUR_API_KEY"
+    ```
+
+    Vas a ver algo como:
+
+    ```json
+    {
+      "data": [
+        { "name": "Ventas", "stages": [...] },
+        { "name": "Alquileres", "stages": [...] }
+      ]
+    }
+    ```
+
+    Anota el nombre del pipeline (ej: `Ventas`).
+  </Step>
+
+  <Step title="(Opcional) Obtener emails del equipo">
+    Si sos **owner/admin** y queres asignar leads a agentes especificos:
+
+    ```bash
+    curl -X GET "https://app.fichai.com/api/v1/team" \
+      -H "Authorization: Bearer sk_live_YOUR_API_KEY"
+    ```
+
+    ```json
+    {
+      "data": [
+        { "name": "Pedro Martinez", "email": "pedro@miempresa.com", "role": "member" },
+        { "name": "Ana Lopez", "email": "ana@miempresa.com", "role": "member" }
+      ]
+    }
+    ```
+
+    <Note>
+      Si usas una **key de member**, los leads se asignan automaticamente a vos. No necesitas este paso.
+    </Note>
+  </Step>
+
+  <Step title="Configurar Zapier">
+    ### Trigger: Facebook Lead Ads
+
+    1. En Zapier, crear un nuevo Zap
+    2. **Trigger:** Facebook Lead Ads > New Lead
+    3. Conectar tu cuenta de Facebook y seleccionar la campana
+
+    ### Action: Webhooks by Zapier
+
+    1. **Action:** Webhooks by Zapier > POST
+    2. Configurar:
+       - **URL:** `https://app.fichai.com/api/v1/leads`
+       - **Payload Type:** json
+       - **Headers:**
+         - `Authorization`: `Bearer sk_live_YOUR_API_KEY`
+         - `Content-Type`: `application/json`
+       - **Data:**
+
+    | Key | Value |
+    |-----|-------|
+    | `first_name` | `{{first_name}}` del trigger |
+    | `last_name` | `{{last_name}}` del trigger |
+    | `email` | `{{email}}` del trigger |
+    | `phone` | `{{phone_number}}` del trigger |
+    | `pipeline` | `Ventas` (o el nombre de tu pipeline) |
+    | `source` | `campaign` |
+    | `campaign_data.campaign_name` | `{{campaign_name}}` del trigger |
+    | `campaign_data.form_id` | `{{form_id}}` del trigger |
+
+    3. **Test** el Zap y verificar que se creo el contacto en FichAI
+  </Step>
+
+  <Step title="Configurar n8n (alternativa)">
+    1. Crear un workflow con trigger **Facebook Lead Ads**
+    2. Agregar nodo **HTTP Request**:
+       - **Method:** POST
+       - **URL:** `https://app.fichai.com/api/v1/leads`
+       - **Authentication:** Header Auth
+         - Name: `Authorization`
+         - Value: `Bearer sk_live_YOUR_API_KEY`
+       - **Body (JSON):**
+
+    ```json
+    {
+      "first_name": "{{ $json.first_name }}",
+      "last_name": "{{ $json.last_name }}",
+      "email": "{{ $json.email }}",
+      "phone": "{{ $json.phone_number }}",
+      "pipeline": "Ventas",
+      "source": "campaign",
+      "campaign_data": {
+        "campaign_name": "{{ $json.campaign_name }}",
+        "form_id": "{{ $json.form_id }}"
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Configurar Make (alternativa)">
+    1. Crear un escenario con modulo **Facebook Lead Ads > Watch Leads**
+    2. Agregar modulo **HTTP > Make a Request**:
+       - **URL:** `https://app.fichai.com/api/v1/leads`
+       - **Method:** POST
+       - **Headers:**
+         - `Authorization`: `Bearer sk_live_YOUR_API_KEY`
+         - `Content-Type`: `application/json`
+       - **Body type:** Raw > JSON
+       - **Request content:**
+
+    ```json
+    {
+      "first_name": "{{first_name}}",
+      "last_name": "{{last_name}}",
+      "email": "{{email}}",
+      "phone": "{{phone_number}}",
+      "pipeline": "Ventas",
+      "source": "campaign",
+      "campaign_data": {
+        "campaign_name": "{{campaign_name}}",
+        "form_id": "{{form_id}}"
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Verificar">
+    1. Generar un lead de prueba desde Meta Ads (o usar el test de Zapier/n8n)
+    2. Ir a **Dashboard > CRM > Contactos** en FichAI
+    3. Verificar que aparezca el nuevo contacto con su oportunidad en el pipeline correcto
+  </Step>
+</Steps>
+
+## Tips
+
+<AccordionGroup>
+  <Accordion title="Usar nombre de pipeline en vez de UUID">
+    El campo `pipeline` acepta el nombre del pipeline (ej: `"Ventas"`) con busqueda case-insensitive. Esto es mas simple que usar `pipeline_id` (UUID).
+  </Accordion>
+
+  <Accordion title="Keys de member para agentes individuales">
+    Si cada agente maneja sus propias campanas, que cada uno cree su propia API key de tipo **member**. Los leads se auto-asignan al agente automaticamente sin necesidad de configurar `assigned_to`.
+  </Accordion>
+
+  <Accordion title="Keys de owner/admin para la inmobiliaria">
+    Si la inmobiliaria centraliza las campanas, usar una key de **owner/admin** y configurar `assigned_to_email` con el email del agente correspondiente. Se puede usar un campo del formulario de Meta para rutear dinamicamente.
+  </Accordion>
+
+  <Accordion title="Agregar datos de campana">
+    El campo `campaign_data` acepta cualquier objeto JSON. Recomendamos incluir al menos `campaign_name` y `form_id` para poder trackear de donde viene cada lead.
+  </Accordion>
+
+  <Accordion title="No se hace deduplicacion">
+    Cada llamada a `POST /api/v1/leads` crea un contacto nuevo + oportunidad nueva. Si un lead se envia multiples veces (retry de Zapier, etc), se crean multiples registros.
+  </Accordion>
+</AccordionGroup>
+
+## Ejemplo completo (cURL)
+
+```bash
+# 1. Ver pipelines
+curl -s "https://app.fichai.com/api/v1/pipelines" \
+  -H "Authorization: Bearer sk_live_YOUR_KEY" | jq '.data[].name'
+
+# 2. Ver equipo (solo owner/admin)
+curl -s "https://app.fichai.com/api/v1/team" \
+  -H "Authorization: Bearer sk_live_YOUR_KEY" | jq '.data[] | {name, email}'
+
+# 3. Crear lead
+curl -X POST "https://app.fichai.com/api/v1/leads" \
+  -H "Authorization: Bearer sk_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "first_name": "Maria",
+    "last_name": "Garcia",
+    "email": "maria@gmail.com",
+    "phone": "+5491166667777",
+    "pipeline": "Ventas",
+    "assigned_to_email": "pedro@miempresa.com",
+    "source": "campaign",
+    "campaign_data": {
+      "campaign_id": "120210123456",
+      "campaign_name": "Meta Leads Q1 2026",
+      "ad_set": "Audiencia Palermo",
+      "form_id": "987654321"
+    },
+    "tags": ["meta-ads", "palermo"]
+  }'
+```
